@@ -6,7 +6,11 @@ async function handleGetAllTheOrders(req, res) {
       .populate("customer", "name")
       .populate("items", "name");
 
-    return res.json({ success: true, data: orders });
+    return res.json({
+      success: true,
+      message: `Welcome, user ${req.user.email}`,
+      data: orders,
+    });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

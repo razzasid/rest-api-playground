@@ -1,7 +1,6 @@
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-require("dotenv").config();
 
 async function handleSignUp(req, res) {
   try {
@@ -13,7 +12,15 @@ async function handleSignUp(req, res) {
         .json({ success: false, message: "All fields are required" });
     }
 
-    const salt = await bcrypt.genSalt(10)
+    const existingUser = await User.findOne({ email: body.email });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already registered. Please log in.",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(body.password, salt);
 
     const user = await User.create({
@@ -21,11 +28,17 @@ async function handleSignUp(req, res) {
       email: body.email,
       phone: body.phone,
       password: hashedPassword,
+      role: body.role || "customer",
     });
 
     return res.status(201).json({ success: true, data: user });
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    if (err.code === 11000 && err.keyPattern?.email) {
+      return res.status(409).json({
+        success: false,
+        message: "Email already exists",
+      });
+    }
   }
 }
 
@@ -50,7 +63,7 @@ async function handleLogIn(req, res) {
     }
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "secretKey",
       { expiresIn: "1h" }
     );

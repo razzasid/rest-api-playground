@@ -11,10 +11,11 @@ function checkAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, secret);
-    console.log(decoded);
-    return res
-      .status(200)
-      .json({ success: true, message: "You are authenticated" });
+    req.user = decoded;
+
+    // return res
+    //   .status(200)
+    //   .json({ success: true, message: "You are authenticated" });
     next();
   } catch (err) {
     console.error("Invalid token", err.message);
